@@ -9,9 +9,9 @@ const DashboardHeader: React.FC = () => {
       <div className="flex items-center">
         <BarChart3 className="h-8 w-8 mr-2 text-blockchain-primary" />
         <div>
-          <h1 className="text-2xl font-bold">ChainSight Finance</h1>
+          <h1 className="text-2xl font-bold">ChainLedger</h1>
           <p className="text-sm text-muted-foreground">
-            Blockchain-Powered Financial Reporting
+            Blockchain-Powered Financial Assistant
           </p>
         </div>
       </div>

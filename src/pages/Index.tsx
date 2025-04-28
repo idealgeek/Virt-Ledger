@@ -14,13 +14,12 @@ const Index = () => {
 
           <div className="grid grid-cols-1 gap-8">
             <FinancialRecordForm />
-            
             <TransactionHistory />
           </div>
           
           <footer className="mt-16 py-4 text-center text-sm text-muted-foreground">
             <p>
-              ChainSight Finance - Blockchain-Powered Financial Reporting Dashboard
+              ChainLedger - Blockchain-Powered Financial Assistant
               <br />
               Running on Sepolia Testnet
             </p>
