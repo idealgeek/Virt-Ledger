@@ -19,7 +19,7 @@ const Index = () => {
           
           <footer className="mt-16 py-4 text-center text-sm text-muted-foreground">
             <p>
-              ChainLedger - Blockchain-Powered Financial Assistant
+              VIRTUSA LEDGER - Blockchain-Powered Financial Assistant
               <br />
               Running on Sepolia Testnet
             </p>
