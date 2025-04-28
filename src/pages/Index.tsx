@@ -1,13 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from "react";
+import { BlockchainProvider } from "@/contexts/BlockchainContext";
+import FinancialRecordForm from "@/components/FinancialRecordForm";
+import TransactionHistory from "@/components/TransactionHistory";
+import DashboardHeader from "@/components/DashboardHeader";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <BlockchainProvider>
+      <div className="min-h-screen bg-slate-50">
+        <div className="container mx-auto px-4 py-6">
+          <DashboardHeader />
+
+          <div className="grid grid-cols-1 gap-8">
+            <FinancialRecordForm />
+            
+            <TransactionHistory />
+          </div>
+          
+          <footer className="mt-16 py-4 text-center text-sm text-muted-foreground">
+            <p>
+              ChainSight Finance - Blockchain-Powered Financial Reporting Dashboard
+              <br />
+              Running on Sepolia Testnet
+            </p>
+          </footer>
+        </div>
       </div>
-    </div>
+    </BlockchainProvider>
   );
 };
 
