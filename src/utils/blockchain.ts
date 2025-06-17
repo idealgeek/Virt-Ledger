@@ -1,4 +1,3 @@
-
 import { ethers } from "ethers";
 import { FinancialRecord } from "@/types/financial";
 import { toast } from "sonner";
@@ -11,54 +10,89 @@ declare global {
 
 // Check if MetaMask is installed
 export const isMetaMaskInstalled = (): boolean => {
-  return window.ethereum !== undefined;
+  return typeof window !== "undefined" && typeof window.ethereum !== "undefined";
 };
 
 // Connect to MetaMask
 export const connectWallet = async (): Promise<string | null> => {
   if (!isMetaMaskInstalled()) {
-    toast.error("MetaMask is not installed");
+    toast.error("MetaMask is not installed. Please install MetaMask extension.");
+    window.open("https://metamask.io/download/", "_blank");
     return null;
   }
 
   try {
+    // Request account access
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    if (!accounts || accounts.length === 0) {
+      toast.error("No accounts found. Please create an account in MetaMask.");
+      return null;
+    }
+
     const provider = new ethers.BrowserProvider(window.ethereum);
-    const accounts = await provider.send("eth_requestAccounts", []);
     
     // Check if we're on Sepolia (chainId 11155111)
-    const { chainId } = await provider.getNetwork();
+    const network = await provider.getNetwork();
+    const chainId = Number(network.chainId);
     
-    if (chainId !== BigInt(11155111)) {
-      toast.error("Please switch to Sepolia testnet");
+    console.log("Current network:", { chainId, name: network.name });
+    
+    if (chainId !== 11155111) {
+      toast.info("Switching to Sepolia testnet...");
       try {
         // Request switch to Sepolia
-        await provider.send("wallet_switchEthereumChain", [
-          { chainId: "0xaa36a7" } // 11155111 in hex
-        ]);
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xaa36a7" }], // 11155111 in hex
+        });
       } catch (switchError: any) {
         // This error code indicates that the chain has not been added to MetaMask
         if (switchError.code === 4902) {
-          await provider.send("wallet_addEthereumChain", [
-            {
-              chainId: "0xaa36a7", // 11155111 in hex
-              chainName: "Sepolia Testnet",
-              nativeCurrency: {
-                name: "Sepolia ETH",
-                symbol: "ETH",
-                decimals: 18,
-              },
-              rpcUrls: ["https://sepolia.infura.io/v3/"],
-              blockExplorerUrls: ["https://sepolia.etherscan.io"],
-            },
-          ]);
+          try {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0xaa36a7", // 11155111 in hex
+                  chainName: "Sepolia Testnet",
+                  nativeCurrency: {
+                    name: "Sepolia ETH",
+                    symbol: "ETH",
+                    decimals: 18,
+                  },
+                  rpcUrls: ["https://sepolia.infura.io/v3/"],
+                  blockExplorerUrls: ["https://sepolia.etherscan.io"],
+                },
+              ],
+            });
+          } catch (addError) {
+            console.error("Failed to add Sepolia network:", addError);
+            toast.error("Failed to add Sepolia network");
+            return null;
+          }
+        } else {
+          console.error("Failed to switch network:", switchError);
+          toast.error("Failed to switch to Sepolia testnet");
+          return null;
         }
       }
     }
 
+    toast.success("Wallet connected successfully!");
     return accounts[0];
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to connect wallet:", error);
-    toast.error("Failed to connect wallet");
+    
+    if (error.code === 4001) {
+      toast.error("Connection rejected by user");
+    } else if (error.code === -32002) {
+      toast.error("Connection request already pending. Please check MetaMask.");
+    } else {
+      toast.error("Failed to connect wallet. Please try again.");
+    }
     return null;
   }
 };

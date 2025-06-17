@@ -37,7 +37,10 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
   // Check if already connected
   useEffect(() => {
     const checkConnection = async () => {
-      if (!isMetaMaskInstalled()) return;
+      if (!isMetaMaskInstalled()) {
+        console.log("MetaMask not installed");
+        return;
+      }
 
       try {
         const ethereum = window.ethereum;
@@ -45,6 +48,7 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           setConnected(true);
+          console.log("Already connected to:", accounts[0]);
           
           // Load stored records
           loadStoredRecords();
@@ -75,39 +79,63 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     if (!isMetaMaskInstalled()) return;
 
     const handleAccountsChanged = (accounts: string[]) => {
+      console.log("Accounts changed:", accounts);
       if (accounts.length === 0) {
         // User disconnected
         setConnected(false);
         setAccount(null);
+        toast.info("Wallet disconnected");
       } else if (accounts[0] !== account) {
         // Account changed
         setAccount(accounts[0]);
         setConnected(true);
+        toast.success("Account switched successfully");
       }
+    };
+
+    const handleChainChanged = (chainId: string) => {
+      console.log("Chain changed to:", chainId);
+      // Reload the page when chain changes to avoid state issues
+      window.location.reload();
     };
 
     const ethereum = window.ethereum;
     ethereum.on("accountsChanged", handleAccountsChanged);
+    ethereum.on("chainChanged", handleChainChanged);
 
     return () => {
       ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      ethereum.removeListener("chainChanged", handleChainChanged);
     };
   }, [account]);
 
   // Connect wallet function
   const connect = async () => {
+    if (!isMetaMaskInstalled()) {
+      toast.error("MetaMask is not installed. Please install MetaMask extension.");
+      return;
+    }
+
+    if (connecting) {
+      toast.info("Connection already in progress...");
+      return;
+    }
+
     setConnecting(true);
+    console.log("Attempting to connect wallet...");
+    
     try {
       const newAccount = await connectWallet();
       if (newAccount) {
         setAccount(newAccount);
         setConnected(true);
+        console.log("Successfully connected:", newAccount);
         // Load stored records on successful connection
         loadStoredRecords();
       }
     } catch (error) {
       console.error("Connection failed:", error);
-      toast.error("Failed to connect wallet");
+      toast.error("Failed to connect wallet. Please try again.");
     } finally {
       setConnecting(false);
     }
