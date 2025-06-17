@@ -12,22 +12,28 @@ const ConnectWalletButton: React.FC = () => {
   };
 
   const handleConnect = async () => {
-    console.log("Connect button clicked");
-    console.log("Current state:", { connected, connecting, account });
+    console.log("🔘 Button clicked");
+    console.log("📊 Button state:", { connected, connecting, account });
     
-    if (connecting || connected) {
-      console.log("Button disabled - already connecting or connected");
+    if (connecting) {
+      console.log("⏳ Button disabled - connecting");
       return;
     }
     
+    if (connected) {
+      console.log("✅ Already connected");
+      return;
+    }
+    
+    console.log("🚀 Calling connect function...");
     try {
       await connect();
     } catch (error) {
-      console.error("Connection error in button handler:", error);
+      console.error("🔴 Button handler error:", error);
     }
   };
 
-  console.log("ConnectWalletButton render:", { connected, connecting, account });
+  console.log("🔄 Button render:", { connected, connecting, account });
 
   return (
     <Button
