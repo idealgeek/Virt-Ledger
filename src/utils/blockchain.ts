@@ -1,3 +1,4 @@
+
 import { ethers } from "ethers";
 import { FinancialRecord } from "@/types/financial";
 import { toast } from "sonner";
@@ -10,24 +11,34 @@ declare global {
 
 // Check if MetaMask is installed
 export const isMetaMaskInstalled = (): boolean => {
-  return typeof window !== "undefined" && typeof window.ethereum !== "undefined";
+  const hasEthereum = typeof window !== "undefined" && typeof window.ethereum !== "undefined";
+  console.log("MetaMask installed check:", hasEthereum);
+  return hasEthereum;
 };
 
 // Connect to MetaMask
 export const connectWallet = async (): Promise<string | null> => {
+  console.log("connectWallet function called");
+
   if (!isMetaMaskInstalled()) {
+    console.log("MetaMask not installed, opening download page");
     toast.error("MetaMask is not installed. Please install MetaMask extension.");
     window.open("https://metamask.io/download/", "_blank");
     return null;
   }
 
   try {
+    console.log("Requesting account access...");
+    
     // Request account access
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
 
+    console.log("Accounts received:", accounts);
+
     if (!accounts || accounts.length === 0) {
+      console.log("No accounts found");
       toast.error("No accounts found. Please create an account in MetaMask.");
       return null;
     }
@@ -41,16 +52,22 @@ export const connectWallet = async (): Promise<string | null> => {
     console.log("Current network:", { chainId, name: network.name });
     
     if (chainId !== 11155111) {
+      console.log("Not on Sepolia, attempting to switch...");
       toast.info("Switching to Sepolia testnet...");
+      
       try {
         // Request switch to Sepolia
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: "0xaa36a7" }], // 11155111 in hex
         });
+        console.log("Successfully switched to Sepolia");
       } catch (switchError: any) {
+        console.log("Switch error:", switchError);
+        
         // This error code indicates that the chain has not been added to MetaMask
         if (switchError.code === 4902) {
+          console.log("Sepolia not added, attempting to add...");
           try {
             await window.ethereum.request({
               method: "wallet_addEthereumChain",
@@ -68,6 +85,7 @@ export const connectWallet = async (): Promise<string | null> => {
                 },
               ],
             });
+            console.log("Successfully added Sepolia network");
           } catch (addError) {
             console.error("Failed to add Sepolia network:", addError);
             toast.error("Failed to add Sepolia network");
@@ -81,16 +99,19 @@ export const connectWallet = async (): Promise<string | null> => {
       }
     }
 
-    toast.success("Wallet connected successfully!");
+    console.log("Connection successful, returning account:", accounts[0]);
     return accounts[0];
   } catch (error: any) {
     console.error("Failed to connect wallet:", error);
     
     if (error.code === 4001) {
+      console.log("User rejected connection");
       toast.error("Connection rejected by user");
     } else if (error.code === -32002) {
+      console.log("Connection request already pending");
       toast.error("Connection request already pending. Please check MetaMask.");
     } else {
+      console.log("Other connection error");
       toast.error("Failed to connect wallet. Please try again.");
     }
     return null;

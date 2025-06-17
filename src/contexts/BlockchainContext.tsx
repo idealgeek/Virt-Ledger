@@ -37,6 +37,8 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
   // Check if already connected
   useEffect(() => {
     const checkConnection = async () => {
+      console.log("Checking existing connection...");
+      
       if (!isMetaMaskInstalled()) {
         console.log("MetaMask not installed");
         return;
@@ -45,6 +47,8 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
       try {
         const ethereum = window.ethereum;
         const accounts = await ethereum.request({ method: "eth_accounts" });
+        console.log("Existing accounts:", accounts);
+        
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           setConnected(true);
@@ -100,44 +104,63 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     };
 
     const ethereum = window.ethereum;
-    ethereum.on("accountsChanged", handleAccountsChanged);
-    ethereum.on("chainChanged", handleChainChanged);
+    if (ethereum) {
+      ethereum.on("accountsChanged", handleAccountsChanged);
+      ethereum.on("chainChanged", handleChainChanged);
 
-    return () => {
-      ethereum.removeListener("accountsChanged", handleAccountsChanged);
-      ethereum.removeListener("chainChanged", handleChainChanged);
-    };
+      return () => {
+        ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        ethereum.removeListener("chainChanged", handleChainChanged);
+      };
+    }
   }, [account]);
 
   // Connect wallet function
   const connect = async () => {
+    console.log("Connect function called");
+    console.log("Current state before connect:", { connected, connecting, account });
+
     if (!isMetaMaskInstalled()) {
+      console.log("MetaMask not installed");
       toast.error("MetaMask is not installed. Please install MetaMask extension.");
       return;
     }
 
     if (connecting) {
-      toast.info("Connection already in progress...");
+      console.log("Already connecting, skipping...");
+      return;
+    }
+
+    if (connected && account) {
+      console.log("Already connected to:", account);
       return;
     }
 
     setConnecting(true);
-    console.log("Attempting to connect wallet...");
+    console.log("Setting connecting to true, attempting to connect...");
     
     try {
       const newAccount = await connectWallet();
+      console.log("connectWallet returned:", newAccount);
+      
       if (newAccount) {
         setAccount(newAccount);
         setConnected(true);
-        console.log("Successfully connected:", newAccount);
+        console.log("Successfully connected and state updated:", newAccount);
+        toast.success("Wallet connected successfully!");
+        
         // Load stored records on successful connection
         loadStoredRecords();
+      } else {
+        console.log("connectWallet returned null/undefined");
+        toast.error("Failed to connect wallet");
       }
     } catch (error) {
-      console.error("Connection failed:", error);
+      console.error("Connection failed with error:", error);
       toast.error("Failed to connect wallet. Please try again.");
     } finally {
       setConnecting(false);
+      console.log("Setting connecting to false");
     }
   };
 
@@ -154,17 +177,19 @@ export const BlockchainProvider: React.FC<BlockchainProviderProps> = ({ children
     }
   };
 
+  const contextValue = {
+    connected,
+    connecting,
+    account,
+    connect,
+    records,
+    addRecord
+  };
+
+  console.log("BlockchainProvider context value:", contextValue);
+
   return (
-    <BlockchainContext.Provider
-      value={{
-        connected,
-        connecting,
-        account,
-        connect,
-        records,
-        addRecord
-      }}
-    >
+    <BlockchainContext.Provider value={contextValue}>
       {children}
     </BlockchainContext.Provider>
   );
